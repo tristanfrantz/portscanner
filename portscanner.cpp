@@ -187,18 +187,48 @@ void udp_scan(string host, vector<int> ports) {
     }
 }
 
-/* check if a received packet has syn|ack flags set */
+/* Check if received packet:
+ * 1. Is using tcp protocol
+ * 2. Is from the host address
+ * 3. Has syn|ack flags set
+ */
 bool syn_ack_response(char* recv_packet, long dest_addr) {
     struct ip *iph = (struct ip*)recv_packet;
+    char iph_protocol = iph->ip_p;
     long source_addr = iph->ip_src.s_addr;
+    int iph_size = iph->ip_hl*4;
+    
 
-    if(iph->ip_p == IPPROTO_TCP && source_addr == dest_addr){
-        struct tcphdr *tcph=(struct tcphdr*)(recv_packet + sizeof(struct ip));
+    if(iph_protocol == IPPROTO_TCP &&source_addr == dest_addr){
+        struct tcphdr *tcph=(struct tcphdr*)(recv_packet + iph_size);
         if(tcph->th_flags == (TH_SYN|TH_ACK))
             return true;
     }
     return false;
 }
+
+/* One of the most sophisticated packet sniffers
+ * out there today, the packet sniffer 3000
+*/
+void packet_sniffer_3000(int recv_sock, long dest_addr) {
+    while(1)
+    {
+        char recv_packet[4096] = {0};
+        if(recv(recv_sock ,recv_packet, sizeof(recv_packet), 0) < 0)
+            cerr << "error: failed to recv packets" << endl;
+
+        bool port_is_open = syn_ack_response(recv_packet, dest_addr);
+
+        if (port_is_open){
+            struct tcphdr *tcph=(struct tcphdr*)(recv_packet + sizeof(struct ip));
+
+            short port = ntohs(tcph->th_sport);
+            cout << "Port " << port << " is open" << " on:" << dest_addr << endl; 
+        }
+    }
+    cout << "goes here ?" << endl;
+}
+
 
 /* create an ip header with the specified source and destination addresses */
 void create_iph(struct ip *iph, long source_addr, long dest_addr) {
@@ -220,7 +250,7 @@ void create_tcph(struct tcphdr *tcph, short port, short flags) {
     int rand_port = random_number(DYNAMIC_PORT, MAX_PORT);
     tcph->th_sport = htons(rand_port); // has to be > than the dynamically assigned range
     tcph->th_dport = htons(port);
-    tcph->th_seq = rand(); 
+    tcph->th_seq = 0; 
     tcph->th_ack = 0;
     tcph->th_off = sizeof(struct tcphdr) / 4; // number of 32-bit words in tcp header(where tcph begins)
     tcph->th_flags = flags;    
@@ -257,9 +287,9 @@ void syn_scan(string host, vector<int> ports) {
     int recv_sock = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
     if (recv_sock < 0)
         cerr << "ERROR opening socket" << endl;
-    
+
     struct timeval time_val;
-    time_val.tv_sec = 5;  /* 2 sec Timeout */
+    time_val.tv_sec = 5;  /* 5 sec Timeout */
     if(setsockopt(recv_sock, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&time_val,sizeof(struct timeval)) < 0)
         cerr << "Oh no spaghettio: could not set socket options" << endl;
 
@@ -278,32 +308,23 @@ void syn_scan(string host, vector<int> ports) {
   /* create the tcp header */
   create_tcph(tcph, ports[0], flags);
 
-  /* scan random-ordered ports */
+  /* start sniff sniffing for a syn ack response */
+  thread sniff(packet_sniffer_3000, recv_sock, dest_addr);
+
+  /* send syn packet to host on the random-ordered ports */
   for(vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
     short port = *it;
     set_tcph_port(tcph, port);
     set_tcph_checksum(tcph, source_addr, dest_addr);
 
-    // Sending packet    
+    // Sending packet with syn flag   
     if (sendto (send_sock, packet, iph->ip_len, 0, (struct sockaddr *) &sin, sizeof (sin)) < 0)
         cout << "error sending packet" << endl;
 
-    // Receiving response packet
-    
-    char recv_packet[4096] = {0};
-    recv(recv_sock ,recv_packet, sizeof(recv_packet), 0);
-
-    bool port_is_open = syn_ack_response(recv_packet, dest_addr);
-
-    if (port_is_open){
-        struct tcphdr *tcph=(struct tcphdr*)(recv_packet + sizeof(struct ip));
-
-        short port = ntohs(tcph->th_sport);
-        cout << "Port " << port << " is open" << endl; 
-    }
     this_thread::sleep_for (chrono::milliseconds(500));
-
   }
+  sniff.detach();
+  close(recv_sock);
 }
 
 /* stealth scan host with the provided random ordered ports
@@ -447,7 +468,7 @@ void udp_scan_range(vector<string> hosts, vector<int> ports) {
 
 
 int main (int argc, char** argv) {
-    vector<string> hosts = {"scanme.nmap.com"};
+    vector<string> hosts = {"skel.ru.is", "scanme.nmap.org"};
     vector<int> ports = {49176, 631, 5232, 21, 22, 80, 8080, 31337, 49157, 7070, 554, 1231, 2342, 5232, 5245, 6254, 2323, 123, 68};
 
     /* randomize the vectors (ports and hosts) */
@@ -493,6 +514,7 @@ int main (int argc, char** argv) {
             syn_scan_range(hosts, ports);
             break;
     }
+
 
     return 0;
 }
