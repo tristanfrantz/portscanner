@@ -4,8 +4,14 @@ IP address, port, comment
 82.221.78.153, 50001, open
 82.221.78.154, 50001, open
 82.221.78.155, 50001, open
+82.221.81.57, ALL PORTS, open
+82.221.81.84, ALL PORTS, open
 82.221.85.18, 49154, open
 82.221.85.20, 49154, open
 82.221.92.22, 49154, open
-82.221.81.57, ALL PORTS, open
-82.221.81.84, ALL PORTS, open
+31.209.146.213, 102, open using siemens S7
+
+Scan results for the IP ranges 82.221.81.0/19 and 31.209.144.0/20
+Only hosts having open ports are shown, since nothing was found
+for > 99% of the ranges. The ALL PORTS field indicates all ports
+in ports.txt were open on that host which means it's likeley a honeypot.

@@ -49,6 +49,7 @@ map<string, list<int>> TcpScanner::tcp_scan_range(vector<string> hosts, vector<i
     for(vector<string>::iterator it = hosts.begin(); it != hosts.end(); ++it) {
         string host = *it;
         threads.push_back(thread(&TcpScanner::tcp_scan, this, host, ports));
+        this_thread::sleep_for (chrono::milliseconds(10));
     }
 
     for (vector<thread>::iterator it = threads.begin(); it != threads.end() ; ++it) {

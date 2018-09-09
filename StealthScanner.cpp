@@ -40,7 +40,7 @@ void StealthScanner::stealth_scan(string host, vector<int> ports, short flags) {
     
     /* Scan the ports */
     for(vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
-        short port = htons(*it);
+        int port = htons(*it);
         set_tcph_checksum(tcph, source_addr, dest_addr);
         set_tcph_port(tcph, port);
 
@@ -68,7 +68,7 @@ void StealthScanner::stealth_scan(string host, vector<int> ports, short flags) {
 
             if(tcph->th_flags == (TH_RST))
             {
-                short port = ntohs(tcph->th_sport);
+                int port = ntohs(tcph->th_sport);
                 closed_ports.insert(port);
             }
         }
@@ -76,7 +76,7 @@ void StealthScanner::stealth_scan(string host, vector<int> ports, short flags) {
         this_thread::sleep_for (chrono::milliseconds(INTERVAL + rand_interval));
     }
 
-    /* iterate through all ports. If the port is not in the closed port set
+    /* Iterate through all ports. If the port is not in the closed port set
      * it could be open or filtered
      */
     for(vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
@@ -97,6 +97,7 @@ map<string, list<int>> StealthScanner::stealth_scan_range(vector<string> hosts, 
     for(vector<string>::iterator it = hosts.begin(); it != hosts.end(); ++it) {
         string host = *it;
         threads.push_back(thread(&StealthScanner::stealth_scan, this, host, ports, flags));
+        this_thread::sleep_for (chrono::milliseconds(10));
     }
 
     for (vector<thread>::iterator it = threads.begin(); it != threads.end(); ++it) {

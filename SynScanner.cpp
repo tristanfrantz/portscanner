@@ -43,7 +43,7 @@ void SynScanner::syn_scan(string host, vector<int> ports) {
 
     /* Send packets to host:port with the syn flag set */
     for(vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
-        short port = *it;
+        int port = *it;
         set_tcph_port(tcph, port);
         set_tcph_checksum(tcph, source_addr, dest_addr);
 
@@ -103,6 +103,7 @@ map<string, list<int>> SynScanner::syn_scan_range(vector<string> hosts, vector<i
     for(vector<string>::iterator it = hosts.begin(); it != hosts.end(); ++it) {
         string host = *it;
         threads.push_back(thread(&SynScanner::syn_scan, this, host, ports));
+        this_thread::sleep_for (chrono::milliseconds(10));
     }
 
     for (vector<thread>::iterator it = threads.begin(); it != threads.end(); ++it) {

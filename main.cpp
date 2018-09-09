@@ -22,7 +22,7 @@ const string PORTS_FILE_NAME = "ports.txt";
 vector<int> get_ports();
 /* Get hosts via text file */
 vector<string> get_hosts();
-/* Prints out report; which ports are open and how many are closed */
+/* Prints out report: which ports are open and how many are closed */
 void print_report(map<string, list<int>> report, int port_count);
 
 
