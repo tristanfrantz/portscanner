@@ -1,4 +1,7 @@
-// utils.h
+/* utils.h
+ * Common utilities used by the port scanners
+ */
+
 #ifndef UTILS_H
 #define UTILS_H
 
@@ -10,11 +13,12 @@
 #include <netinet/tcp.h>   //Provides declarations for tcp header
 #include <netinet/ip.h>    //Provides declarations for ip header
 #include <arpa/inet.h>
+
 const int MAX_PORT = 65535; 
 const int DYNAMIC_PORT = 49152;
 const int INTERVAL = 500;
 
-/* "Pseudo tcp header" needed for checksum calculation */
+/* "Pseudo tcp header" used for checksum calculation */
 struct tcp_pheader {
     unsigned int source_address; // 4 byte/s
     unsigned int dest_address;   // 4 byte/s

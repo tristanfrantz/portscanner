@@ -26,6 +26,7 @@ unsigned short checksum(unsigned short *addr, int len) {
     return(answer);
 }
 
+/* random number between min and max */
 int random_number(int min, int max){
 	std::random_device seeder;
 
@@ -35,6 +36,7 @@ int random_number(int min, int max){
 	return r;
 }
 
+/* Get address corresponding to hostname and port */
 struct sockaddr_in get_sockaddr_in(const char* hostname, int port){
     struct hostent *server;
     server = gethostbyname(hostname);
@@ -94,11 +96,14 @@ void set_tcph_checksum(struct tcphdr *tcph, long source_addr, long dest_addr) {
     tcph->th_sum = checksum( (unsigned short*) &tcp_ph , sizeof (struct tcp_pheader));
 }
 
+/* set the port of the tcp header */
 void set_tcph_port(struct tcphdr *tcph, short port) {
     tcph->th_dport = htons(port);
 }
 
-// src: https://tinyurl.com/ya5prw53
+/* src: https://tinyurl.com/ya5prw53
+ * get the local ip displayed to a host 
+ */
 void get_local_ip ( char * buffer) {
     int sock = socket ( AF_INET, SOCK_DGRAM, 0);
  

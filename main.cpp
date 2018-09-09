@@ -15,66 +15,35 @@
 #include "UdpScanner.h"
 #include "StealthScanner.h"
 
-/* get ports via text file */
-vector<int> get_ports() {
-    vector<int> ports;
-    string line;
-    ifstream myfile ("ports.txt");
-    if (myfile.is_open())
-    {
-        while ( getline (myfile,line) )
-        {
-            int port = stoi(line);
-            ports.push_back(port);
-        }
-        myfile.close();
-    }
-    else cout << "Unable to open file"; 
+const string HOSTS_FILE_NAME = "hosts.txt";
+const string PORTS_FILE_NAME = "ports.txt";
 
-    return ports;
-}
-
+/* Get ports via text file */
+vector<int> get_ports();
+/* Get hosts via text file */
+vector<string> get_hosts();
 /* Prints out report; which ports are open and how many are closed */
-void print_report(map<string, list<int>> report, int port_count) {
-    if (report.empty()) {
-        cout << "No open ports found" << endl;
-        cout << "Closed ports(not shown): " << port_count << endl;
-    }
+void print_report(map<string, list<int>> report, int port_count);
 
-    for( const auto& pair : report ) {
-        string host = pair.first;
-        list<int> open_ports = pair.second;
-        cout << "Scan report for " << host << endl;
-        cout << "Closed ports(not shown): " << port_count - open_ports.size() << endl;
-        for( int port : open_ports ) {
-            cout << port << " is open" << endl;
-        }
-        cout << endl;
-    }
-}
 
 int main (int argc, char** argv) {
-    //test hosts
-    vector<string> hosts = {"scanme.nmap.org"};
-    // test ports
+    vector<string> hosts = get_hosts();
     vector<int> ports = get_ports();
+    map<string, list<int>> report;
 
-    /* randomize the vectors (ports and hosts) */
+    /* Randomize the vectors (ports and hosts) */
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     default_random_engine engine(seed);
     shuffle(ports.begin(), ports.end(), engine);
     shuffle(hosts.begin(), hosts.end(), engine);
 
-    map<string, list<int>> report;
-
-    // start scanning!
+    /* Lets start scanning! */
     int opt;
     short flags = 0;
     SynScanner synscanner;
     TcpScanner tcpscanner;
     UdpScanner udpscanner;
     StealthScanner stealthscanner;
-
     switch (opt = getopt(argc, argv, "tsfxnyu")) {
         case 't':
             cout << "Starting TCP scan..." << endl;
@@ -117,4 +86,57 @@ int main (int argc, char** argv) {
     print_report(report, ports.size());
 
     return 0;
+}
+
+void print_report(map<string, list<int>> report, int port_count) {
+    if (report.empty()) {
+        cout << "No open ports found" << endl;
+    }
+
+    for( const auto& pair : report ) {
+        string host = pair.first;
+        list<int> open_ports = pair.second;
+        
+        cout << "Scan report for " << host << endl;
+        cout << "Closed ports(not shown): " << port_count - open_ports.size() << endl;
+        for( int port : open_ports ) {
+            cout << port << " is open" << endl;
+        }
+        cout << endl;
+    }
+}
+
+vector<int> get_ports() {
+    vector<int> ports;
+    string line;
+    ifstream portsfile (PORTS_FILE_NAME);
+    if (portsfile.is_open())
+    {
+        while ( getline (portsfile,line) )
+        {
+            int port = stoi(line);
+            ports.push_back(port);
+        }
+        portsfile.close();
+    }
+    else cout << "Unable to open file"; 
+
+    return ports;
+}
+
+vector<string> get_hosts() {
+    vector<string> hosts;
+    string line;
+    ifstream hostsfile (HOSTS_FILE_NAME);
+    if (hostsfile.is_open())
+    {
+        while ( getline (hostsfile,line) )
+        {
+            hosts.push_back(line);
+        }
+        hostsfile.close();
+    }
+    else cout << "Unable to open file"; 
+
+    return hosts;
 }
